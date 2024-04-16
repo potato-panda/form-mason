@@ -1,0 +1,22 @@
+.item-form {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  column-gap: 1.25rem;
+  padding: 8px;
+}
+
+.form-group {
+  /* display: flex;
+  flex-direction: row;
+  row-gap: 0.5rem; */
+  .form-label {
+    display: block;
+    padding: 4px 0;
+  }
+
+  .form-control {
+    display: block;
+    margin-bottom: 8px;
+  }
+}
