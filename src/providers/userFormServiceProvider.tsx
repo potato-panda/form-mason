@@ -12,7 +12,7 @@ type ContextState = {
 
 export const Context = createContext<ContextState | null>(null);
 
-export const UserFormDataServiceProvider: FC<{ children: ReactNode }> = (
+export const UserFormServiceProvider: FC<{ children: ReactNode }> = (
   props
 ) => {
 

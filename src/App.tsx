@@ -1,18 +1,21 @@
 import './App.css';
 import Layout from './layouts/layout';
+import { EventBusServiceProvider } from './providers/eventBusServiceProvider';
 import { ModalServiceProvider } from './providers/modalServiceProvider';
 import { RoutingServiceProvider } from './providers/routingServiceProvider';
-import { UserFormDataServiceProvider } from './providers/userFormDataServiceProvider';
+import { UserFormServiceProvider } from './providers/userFormServiceProvider';
 
 function App() {
   return (
-    <UserFormDataServiceProvider>
+    <EventBusServiceProvider>
       <RoutingServiceProvider>
         <ModalServiceProvider>
-          <Layout />
+          <UserFormServiceProvider>
+            <Layout />
+          </UserFormServiceProvider>
         </ModalServiceProvider>
       </RoutingServiceProvider>
-    </UserFormDataServiceProvider>
+    </EventBusServiceProvider>
   );
 }
 
