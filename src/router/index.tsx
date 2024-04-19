@@ -1,4 +1,4 @@
-import Router from './router';
+import Router from './Router';
 
 export default Router;
-export { Routes } from './routes';
+export { Routes } from './Routes';

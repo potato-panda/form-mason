@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { Context } from '../providers/routingServiceProvider';
+import { Context } from '../providers/RoutingServiceProvider';
 
 export const Router = () => {
   const contextState = useContext(Context);

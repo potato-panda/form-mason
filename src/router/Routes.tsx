@@ -1,5 +1,5 @@
-import FormBuilder from '../views/formBuilder';
-import { FormList } from '../views/formList';
+import FormBuilder from '../views/form/FormBuilder';
+import { FormList } from '../views/form/FormList';
 
 type Route = {
   [path: string]: {

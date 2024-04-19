@@ -1,4 +1,4 @@
-import { Router } from '../router/router';
+import { Router } from '../router/Router';
 
 export default function TopBar({
   toggleSidebar,

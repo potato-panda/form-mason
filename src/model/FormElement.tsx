@@ -2,7 +2,7 @@ export type SingleValueInputs = 'text' | 'textarea';
 export type MultipleChoiceInputs = 'select' | 'radio';
 export type InputType = SingleValueInputs | MultipleChoiceInputs;
 
-export interface FormItem<T extends InputType> {
+export interface FormElement<T extends InputType = InputType> {
   order?: number;
   type: InputType;
   label: string;

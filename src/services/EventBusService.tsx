@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { Context } from '../providers/eventBusServiceProvider';
+import { Context } from '../providers/EventBusServiceProvider';
 
 export const EventBusService = () => {
   const contextState = useContext(Context);

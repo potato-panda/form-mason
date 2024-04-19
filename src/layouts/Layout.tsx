@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import Content from './content';
-import SideBar from './sidebar';
-import Topbar from './topbar';
+import Content from './Content';
+import SideBar from './Sidebar';
+import Topbar from './Topbar';
 
 export default function Layout() {
   const [showSidebar, setShowSidebar] = useState(true);

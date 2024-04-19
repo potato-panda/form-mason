@@ -1,17 +1,19 @@
 import { ChangeEvent, createElement, useState } from 'react';
-import FormElement from '../form/FormElement';
-import { Form, IForm } from '../model/form';
-import { FormItem, InputType } from '../model/formItem';
-import { ModalService } from '../services/modalService';
-import Unicode from '../utils/Unicode';
-import StatefulStyledInput from '../components/inputs/statefulStyledInput';
+import FormElementAdder from './FormElementAdder';
+import { FormUtils, Form } from '../../model/Form';
+import { FormElement, InputType } from '../../model/FormElement';
+import { ModalService } from '../../services/ModalService';
+import Unicode from '../../utils/Unicode';
+import StatefulStyledInput from '../../components/inputs/StatefulStyledInput';
+import { FormSettings } from '../../model/FormSettings';
 
-export default function FormBuilder({ _form }: { _form?: IForm }) {
-  const [form, setForm] = useState<IForm>(_form ?? new Form());
+export default function FormBuilder({ _form }: { _form?: Form }) {
+  const [form, setForm] = useState<Form>(_form ?? FormUtils.create());
+  const [formSettings, setFormSettings] = useState<FormSettings>({});
 
   const modalService = ModalService();
 
-  const addFormItemModal = modalService.createModal({
+  const addFormElementModal = modalService.createModal({
     header: (
       <>
         <h4>Add Form Element</h4>
@@ -21,7 +23,10 @@ export default function FormBuilder({ _form }: { _form?: IForm }) {
       </>
     ),
     content: (
-      <FormElement formElement={form} addItem={addFormItem}></FormElement>
+      <FormElementAdder
+        formElement={form}
+        addItem={addFormItem}
+      ></FormElementAdder>
     ),
   });
 
@@ -59,23 +64,23 @@ export default function FormBuilder({ _form }: { _form?: IForm }) {
     setForm({
       ...form,
       name: name,
-    } as IForm);
+    } as Form);
   }
 
-  function addFormItem(item: FormItem<InputType>) {
+  function addFormItem(item: FormElement<InputType>) {
     setForm({
       ...form,
       fields: [...(form?.fields ?? []), item as any],
-    } as IForm);
+    } as Form);
   }
 
-  function removeFormItem(item: FormItem<InputType>) {
+  function removeFormItem(item: FormElement<InputType>) {
     setForm({
       ...form,
       fields: (form?.fields ?? []).filter(
-        (el: FormItem<InputType>) => el !== item
+        (el: FormElement<InputType>) => el !== item
       ),
-    } as IForm);
+    } as Form);
   }
 
   function openAddCategoryModal() {
@@ -91,16 +96,16 @@ export default function FormBuilder({ _form }: { _form?: IForm }) {
           name: category,
         },
       ],
-    } as IForm);
+    } as Form);
   }
 
   function openAddFormItemModal() {
-    addFormItemModal.open();
+    addFormElementModal.open();
   }
 
   function closeModals() {
     addCategoryModal.close();
-    addFormItemModal.close();
+    addFormElementModal.close();
   }
 
   function saveForm() {}
@@ -141,12 +146,11 @@ export default function FormBuilder({ _form }: { _form?: IForm }) {
             e: ChangeEvent<HTMLInputElement>
           ) {
             const checked = e.target.checked;
-            setForm({
-              ...form,
-              options: {
-                ...form?.options,
+            setFormSettings({
+              ...formSettings,
+              ...{
                 textArea: {
-                  ...form?.options?.textArea,
+                  ...formSettings?.textArea,
                   defaultRichText: checked,
                 },
               },
@@ -157,12 +161,11 @@ export default function FormBuilder({ _form }: { _form?: IForm }) {
             e: ChangeEvent<HTMLInputElement>
           ) {
             const checked = e.target.checked;
-            setForm({
-              ...form,
-              options: {
-                ...form?.options,
+            setFormSettings({
+              ...formSettings,
+              ...{
                 copy: {
-                  ...form?.options?.copy,
+                  ...formSettings?.copy,
                   standalone: checked,
                 },
               },
@@ -171,28 +174,22 @@ export default function FormBuilder({ _form }: { _form?: IForm }) {
 
           function onMultiSelectOptionChange(e: ChangeEvent<HTMLInputElement>) {
             const checked = e.target.checked;
-            setForm({
-              ...form,
-              options: {
-                ...form?.options,
-                select: {
-                  ...form?.options?.select,
-                  multi: checked,
-                },
+            setFormSettings({
+              ...formSettings,
+              select: {
+                ...formSettings?.select,
+                multi: checked,
               },
             });
           }
 
           function onSelectSizeOptionChange(e: ChangeEvent<HTMLInputElement>) {
             const size = parseInt(e.target.value);
-            setForm({
-              ...form,
-              options: {
-                ...form?.options,
-                select: {
-                  ...form?.options?.select,
-                  size,
-                },
+            setFormSettings({
+              ...formSettings,
+              select: {
+                ...formSettings?.select,
+                size,
               },
             });
           }
@@ -249,7 +246,7 @@ export default function FormBuilder({ _form }: { _form?: IForm }) {
                           type="checkbox"
                           name="defaultRichText"
                           id="defaultRichText"
-                          checked={form?.options?.textArea?.defaultRichText}
+                          checked={formSettings?.textArea?.defaultRichText}
                           onChange={onDefaultRichTextOptionChange}
                         />
                         <label htmlFor="defaultRichText">
@@ -267,7 +264,7 @@ export default function FormBuilder({ _form }: { _form?: IForm }) {
                           type="checkbox"
                           name="multiSelect"
                           id="multiSelect"
-                          checked={form?.options?.select?.multi}
+                          checked={formSettings?.select?.multi}
                           onChange={onMultiSelectOptionChange}
                         />
                         <label htmlFor="multiSelect">
@@ -282,7 +279,7 @@ export default function FormBuilder({ _form }: { _form?: IForm }) {
                           type="number"
                           name="selectSize"
                           id="selectSize"
-                          value={form?.options?.select?.size}
+                          value={formSettings?.select?.size}
                           min={0}
                           max={10}
                           onChange={onSelectSizeOptionChange}
@@ -302,7 +299,7 @@ export default function FormBuilder({ _form }: { _form?: IForm }) {
                           type="checkbox"
                           name="standaloneCopy"
                           id="standaloneCopy"
-                          checked={form?.options?.copy?.standalone}
+                          checked={formSettings?.copy?.standalone}
                           onChange={onFormStanandaloneCopyOptionChange}
                         />
                         <label htmlFor="standaloneCopy">Standalone Copy</label>

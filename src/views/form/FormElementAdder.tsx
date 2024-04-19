@@ -1,22 +1,22 @@
 import { ChangeEvent, MouseEvent, createElement, useState } from 'react';
-import { InputType, FormItem } from '../model/formItem';
+import { InputType, FormElement } from '../../model/FormElement';
 import './form.css';
-import { IForm } from '../model/form';
+import { Form } from '../../model/Form';
 
 const defaultForm = () => {
   return structuredClone({
     type: 'text',
-  }) as FormItem<InputType>;
+  }) as FormElement;
 };
 
-export default function FormElement({
+export default function FormElementAdder({
   formElement,
   addItem,
 }: {
-  formElement?: IForm;
-  addItem?: (form: FormItem<InputType>) => void;
+  formElement?: Form;
+  addItem?: (form: FormElement) => void;
 }) {
-  const [form, setForm] = useState(defaultForm() as FormItem<InputType>);
+  const [form, setForm] = useState(defaultForm());
 
   function resetForm() {
     setForm(defaultForm());

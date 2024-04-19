@@ -1,5 +1,5 @@
 import { FC, ReactNode, createContext, useState } from 'react';
-import { RoutePath, Routes } from '../router/routes';
+import { RoutePath, Routes } from '../router/Routes';
 
 type ContextState = {
   navigate: (path: string) => void;

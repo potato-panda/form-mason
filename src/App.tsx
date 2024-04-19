@@ -1,9 +1,9 @@
 import './App.css';
-import Layout from './layouts/layout';
-import { EventBusServiceProvider } from './providers/eventBusServiceProvider';
-import { ModalServiceProvider } from './providers/modalServiceProvider';
-import { RoutingServiceProvider } from './providers/routingServiceProvider';
-import { UserFormServiceProvider } from './providers/userFormServiceProvider';
+import Layout from './layouts/Layout';
+import { EventBusServiceProvider } from './providers/EventBusServiceProvider';
+import { ModalServiceProvider } from './providers/ModalServiceProvider';
+import { RoutingServiceProvider } from './providers/RoutingServiceProvider';
+import { UserFormServiceProvider } from './providers/UserFormServiceProvider';
 
 function App() {
   return (
