@@ -11,14 +11,15 @@ export const Context = createContext<ContextState | null>(null);
 const ROOT_PATH: RoutePath = '/';
 
 export const RoutingServiceProvider: FC<{ children: ReactNode }> = (props) => {
-  const [route, setRoute] = useState<RoutePath>(ROOT_PATH);
+  const [route, setRoute] = useState<RoutePath>(
+    Routes[window.location.pathname] ? window.location.pathname : ROOT_PATH
+  );
 
   const navigate = (path: string) => {
     window.history.pushState({}, '', path);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
-  // useEffect(() => {
   window.addEventListener('popstate', () => {
     function updateRoute() {
       const { pathname } = window.location;
@@ -30,12 +31,7 @@ export const RoutingServiceProvider: FC<{ children: ReactNode }> = (props) => {
     }
 
     window.addEventListener('popstate', updateRoute);
-
-    () => {
-      window.removeEventListener('popstate', updateRoute);
-    };
   });
-  // });
 
   return (
     <Context.Provider value={{ navigate, path: route }}>
