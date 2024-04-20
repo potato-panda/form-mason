@@ -7,7 +7,7 @@ type AddEventListenerArgs = EventTarget['addEventListener'];
 type RemoveEventListenerArgs = EventTarget['removeEventListener'];
 
 type ContextState = {
-  publish: DispatchEventArgs;
+  dispatch: DispatchEventArgs;
   subscribe: AddEventListenerArgs;
   unsubscribe: RemoveEventListenerArgs;
 };
@@ -18,7 +18,7 @@ export const EventBusServiceProvider: FC<{ children: ReactNode }> = (props) => {
   const [bus] = useState<EventTarget>(new EventTarget());
 
   const ctxState: ContextState = {
-    publish: (...args) => {
+    dispatch: (...args) => {
       return bus.dispatchEvent(new CustomEvent(...args));
     },
     subscribe(...args): void {

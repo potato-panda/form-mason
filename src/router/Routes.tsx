@@ -1,4 +1,4 @@
-import FormBuilder from '../views/form/FormBuilder';
+import FormEditor from '../views/form/FormEditor';
 import { FormList } from '../views/form/FormList';
 
 type Route = {
@@ -12,5 +12,5 @@ export type RoutePath = keyof Route;
 
 export const Routes: Route = {
   '/': { component: FormList },
-  '/formbuilder': { component: FormBuilder },
+  '/formeditor': { component: FormEditor },
 };

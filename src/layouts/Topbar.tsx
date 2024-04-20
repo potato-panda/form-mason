@@ -7,12 +7,12 @@ export default function TopBar({
 }) {
   const router = Router();
 
-  function openList() {
+  function openFormList() {
     router.navigate('/');
   }
 
-  function openBuilder() {
-    router.navigate('/formbuilder');
+  function openFormEditor() {
+    router.navigate('/formeditor');
   }
 
   return (
@@ -21,11 +21,11 @@ export default function TopBar({
         <button type="button" onClick={() => toggleSidebar()}>
           Toggle Sidebar
         </button>
-        <button type="button" onClick={() => openList()}>
+        <button type="button" onClick={() => openFormList()}>
           List
         </button>
-        <button type="button" onClick={() => openBuilder()}>
-          Builder
+        <button type="button" onClick={() => openFormEditor()}>
+          Editor
         </button>
         <div>topbar</div>
       </div>

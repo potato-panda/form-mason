@@ -1,11 +1,12 @@
-import { LoggerFactory } from '../logger/LoggerFactory';
+const prod = process.env.NODE_ENV === 'production';
 
-export const initDb = new Promise<IDBDatabase>((resolve, reject) => {
-  const logger = LoggerFactory.create('indexedDB');
+const initDb = new Promise<IDBDatabase>((resolve, reject) => {
+  // There's a possible race condition where the database is not ready yet.
 
-  const request = indexedDB.open('form-mason');
+  const request = window.indexedDB.open('form-mason', 1);
 
   request.onsuccess = () => {
+    !prod && console.log(`IndexedDB opened`);
     resolve(request.result);
   };
 
@@ -15,26 +16,33 @@ export const initDb = new Promise<IDBDatabase>((resolve, reject) => {
     switch (event.oldVersion) {
       case 0:
         db.createObjectStore('forms', { keyPath: 'id', autoIncrement: true });
-        logger.info(`Database 'forms' created`);
+        if (!prod) {
+          db.createObjectStore('logs', { autoIncrement: true });
+          console.log(`Object stores created`);
+        }
         break;
       default:
         break;
     }
-
+    !prod && console.log(`IndexedDB upgraded`);
     resolve(db);
   };
 
   request.onerror = () => {
-    logger.error(
-      `Error opening IndexedDB: ${request.error?.message || 'Unknown error'}`
-    );
-    reject();
+    !prod &&
+      console.log(
+        `Error opening IndexedDB: ${request.error?.message || 'Unknown error'}`
+      );
+    reject(request.error);
   };
 
   request.onblocked = (event) => {
-    logger.info(
-      `IndexedDB was blocked. Old version: ${event.oldVersion}; New version: ${event.newVersion}`
-    );
+    !prod &&
+      console.log(
+        `IndexedDB was blocked. Old version: ${event.oldVersion}; New version: ${event.newVersion}`
+      );
     reject();
   };
 });
+
+export default await initDb;

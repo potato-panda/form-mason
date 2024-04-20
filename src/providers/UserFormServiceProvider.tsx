@@ -1,12 +1,18 @@
-import { createContext, FC, ReactNode, useState } from 'react';
-import { TransactionFactory } from '../utils/indexedDB/TransactionFactory';
+import { createContext, FC, ReactNode } from 'react';
+import TransactionFactoryFactory from '../utils/indexedDB/TransactionFactoryFactory';
 import { Form } from '../model/Form';
-import { LoggerFactory } from '../utils/logger/LoggerFactory';
+import LoggerFactory from '../utils/logger/LoggerFactory';
+
+type PaginatedSearchOptions = {
+  query?: string;
+  page?: number;
+  pageSize?: number;
+};
 
 type ContextState = {
   addForm: (form: Form) => Promise<IDBValidKey>;
   getForm: (id: string) => Promise<Form>;
-  getForms: (options?: { page?: number; pageSize?: number }) => Promise<Form[]>;
+  getForms: (options?: PaginatedSearchOptions) => Promise<Form[]>;
   putForm: (form: Form) => Promise<IDBValidKey>;
   deleteForm: (id: string) => Promise<boolean>;
 };
@@ -14,13 +20,22 @@ type ContextState = {
 export const Context = createContext<ContextState | null>(null);
 
 export const UserFormServiceProvider: FC<{ children: ReactNode }> = (props) => {
-  const [logger] = useState(LoggerFactory.create('UserFormServiceProvider'));
-  const rTx = () => TransactionFactory.create('rTx', 'forms', 'readonly');
-  const rwTx = () => TransactionFactory.create('rwTx', 'forms', 'readwrite');
+  const logger = LoggerFactory.create('UserFormServiceProvider');
+  const rTx = TransactionFactoryFactory.createFactory(
+    'ReadOnly|UserFormService',
+    'forms',
+    'readonly'
+  );
+  const rwTx = TransactionFactoryFactory.createFactory(
+    'ReadWrite|UserFormService',
+    'forms',
+    'readwrite'
+  );
 
   const addForm: ContextState['addForm'] = async (form: Form) => {
     return new Promise(async (resolve, reject) => {
-      const tx = await rwTx();
+      const txFactory = await rwTx;
+      const tx = txFactory.create();
       const request = tx.objectStore('forms').add(form);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
@@ -29,7 +44,8 @@ export const UserFormServiceProvider: FC<{ children: ReactNode }> = (props) => {
 
   const getForm: ContextState['getForm'] = async (id: string) => {
     return new Promise<Form>(async (resolve, reject) => {
-      const tx = await rTx();
+      const txFactory = await rTx;
+      const tx = txFactory.create();
       const request = tx.objectStore('forms').get(id);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
@@ -37,16 +53,18 @@ export const UserFormServiceProvider: FC<{ children: ReactNode }> = (props) => {
   };
 
   const getForms: ContextState['getForms'] = async (
-    { page = 1, pageSize = 10 } = {
+    { query, page = 1, pageSize = 10 } = {
       page: 1,
       pageSize: 10,
     }
   ) => {
     return new Promise(async (resolve, reject) => {
-      const tx = await rTx();
-      const request = tx.objectStore('forms').openCursor();
-      const pages: Form[] = [];
+      const txFactory = await rTx;
+      const tx = txFactory.create();
+      const os = tx.objectStore('forms');
+      const request = os.openCursor();
       request.onsuccess = () => {
+        const pages: Form[] = [];
         const { result: cursor } = request;
         if (page > 1) cursor?.advance((page - 1) * pageSize);
         while (cursor) {
@@ -64,7 +82,8 @@ export const UserFormServiceProvider: FC<{ children: ReactNode }> = (props) => {
 
   const putForm: ContextState['putForm'] = async (form: Form) => {
     return new Promise(async (resolve, reject) => {
-      const tx = await rwTx();
+      const txFactory = await rwTx;
+      const tx = txFactory.create();
       const request = tx.objectStore('forms').put(form, form.id);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => {
@@ -76,7 +95,8 @@ export const UserFormServiceProvider: FC<{ children: ReactNode }> = (props) => {
 
   const deleteForm: ContextState['deleteForm'] = async (id: string) => {
     return new Promise(async (resolve, reject) => {
-      const tx = await rwTx();
+      const txFactory = await rwTx;
+      const tx = txFactory.create();
       const request = tx.objectStore('forms').delete(id);
       request.onsuccess = () => resolve(true);
       request.onerror = () => {
