@@ -1,30 +1,19 @@
-export type SingleValueInputs = 'text' | 'textarea';
-export type MultipleChoiceInputs = 'select' | 'radio';
-export type InputType = SingleValueInputs | MultipleChoiceInputs;
+type SingleValueInputs = 'text' | 'textarea' | 'richtext';
+type MultipleValueInputs = 'select' | 'radio';
+export type InputType = SingleValueInputs | MultipleValueInputs;
 
 export interface FormElement<T extends InputType = InputType> {
-  order?: number;
   type: InputType;
-  label: string;
+  order: number;
   name: string;
+  label: string;
   category?: string;
   value: T extends 'select' ? string[] : string;
   defaultValue?: T extends 'select' ? string[] : string;
-  options?: {
-    select?: {
-      // if 'select' type
-      multi?: boolean;
-      size?: number;
-    };
-    textarea?: {
-      // if 'textarea' type
-      richText?: boolean;
-    };
-    copy?: {
-      type: 'standalone' | boolean;
-    };
-    clearBehaviour?: 'exclusive' | 'inclusive';
-    required?: boolean;
-  };
-  optionValues?: T extends MultipleChoiceInputs ? string[] : never;
+  required?: boolean;
+  copyLabel?: boolean;
+  copyBehaviour?: 'exclusive' | boolean;
+  clearBehaviour?: 'exclusive' | 'inclusive';
+  multi?: T extends 'select' ? boolean : undefined;
+  optionValues?: T extends MultipleValueInputs ? string[] : undefined;
 }

@@ -1,33 +1,35 @@
-import { Router } from '../router/Router';
+import { useNavigate } from 'react-router-dom';
 
 export default function TopBar({
   toggleSidebar,
 }: {
   toggleSidebar: () => void;
 }) {
-  const router = Router();
-
-  function openFormList() {
-    router.navigate('/');
-  }
-
-  function openFormEditor() {
-    router.navigate('/formeditor');
-  }
+  const navigate = useNavigate();
 
   return (
     <>
-      <div id="app-topbar">
-        <button type="button" onClick={() => toggleSidebar()}>
+      <div id="app-topbar" className="align-content-center">
+        {/* <button type="button" onClick={() => toggleSidebar()}>
           Toggle Sidebar
-        </button>
-        <button type="button" onClick={() => openFormList()}>
-          List
-        </button>
-        <button type="button" onClick={() => openFormEditor()}>
-          Editor
-        </button>
-        <div>topbar</div>
+        </button> */}
+        <span></span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="button"
+            onClick={() => navigate('/')}
+          >
+            List
+          </button>
+          <button
+            type="button"
+            className="button"
+            onClick={() => navigate('/formeditor')}
+          >
+            Editor
+          </button>
+        </div>
       </div>
     </>
   );

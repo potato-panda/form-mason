@@ -1,8 +1,6 @@
 const prod = process.env.NODE_ENV === 'production';
 
-const initDb = new Promise<IDBDatabase>((resolve, reject) => {
-  // There's a possible race condition where the database is not ready yet.
-
+export default await new Promise<IDBDatabase>((resolve, reject) => {
   const request = window.indexedDB.open('form-mason', 1);
 
   request.onsuccess = () => {
@@ -15,7 +13,16 @@ const initDb = new Promise<IDBDatabase>((resolve, reject) => {
 
     switch (event.oldVersion) {
       case 0:
-        db.createObjectStore('forms', { keyPath: 'id', autoIncrement: true });
+        const os = db.createObjectStore('forms', {
+          keyPath: 'id',
+          autoIncrement: true,
+        });
+        os.createIndex('name', 'name', { unique: true });
+        os.createIndex('tags', 'tags', { unique: false, multiEntry: true });
+        os.createIndex('nameOrTags', ['name', 'tags'], {
+          unique: false,
+          multiEntry: true,
+        });
         if (!prod) {
           db.createObjectStore('logs', { autoIncrement: true });
           console.log(`Object stores created`);
@@ -44,5 +51,3 @@ const initDb = new Promise<IDBDatabase>((resolve, reject) => {
     reject();
   };
 });
-
-export default await initDb;

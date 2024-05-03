@@ -1,8 +1,8 @@
 export default function StatefulStyledInput({
   name,
   id,
-  value,
   placeholder,
+  value,
   setValue,
   style,
 }: {
@@ -17,6 +17,7 @@ export default function StatefulStyledInput({
     <input
       type="text"
       name={name}
+      value={value}
       id={id}
       style={style}
       placeholder={placeholder}

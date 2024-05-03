@@ -1,0 +1,47 @@
+.toaster {
+  position: fixed;
+  display: block;
+  background: transparent;
+  /* outline: auto; */
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  width: 300px;
+  max-width: 300px;
+  padding: 0.25rem;
+}
+
+.toaster-container {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: fit-content;
+}
+
+.toast {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  box-shadow: -2px -2px 10px 0px #bbbbbb;
+  /* outline: auto; */
+
+  &.ok {
+    background: rgb(113, 206, 113);
+  }
+  &.error {
+    background: rgb(216, 96, 96);
+  }
+  &.info {
+    background: rgb(164, 255, 247);
+  }
+  &.warning {
+    background: rgb(255, 194, 79);
+  }
+}
+
+.toast-header {
+  display: flex;
+  justify-content: space-between;
+}

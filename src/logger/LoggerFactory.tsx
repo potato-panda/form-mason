@@ -1,11 +1,8 @@
-import initDb from '../indexedDB/initDb';
+import db from '../db/db';
 
-const prod = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production';
 
-type LogParameters = [
-  level?: 'info' | 'error' | 'ok' | undefined,
-  message?: string | undefined,
-];
+type LogParameters = [level?: 'info' | 'error' | 'ok', message?: string];
 
 interface Logger {
   name: string;
@@ -18,9 +15,8 @@ interface Logger {
 export default class LoggerFactory {
   static create(name: string): Logger {
     const log = async function (...[level = 'info', message]: LogParameters) {
-      if (prod) return;
+      if (isProduction) return;
       const date = new Date();
-      const db = initDb;
       const tx = db.transaction('logs', 'readwrite');
       tx.objectStore('logs').add({
         date,
@@ -33,7 +29,7 @@ export default class LoggerFactory {
       );
     };
 
-    return prod
+    return isProduction
       ? {
           name,
           log: () => {},

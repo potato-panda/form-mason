@@ -1,5 +1,5 @@
 import { ChangeEvent, MouseEvent, createElement, useState } from 'react';
-import { InputType, FormElement } from '../../model/FormElement';
+import { FormElement, InputType } from '../../model/FormElement';
 import './form.css';
 import { Form } from '../../model/Form';
 
@@ -76,43 +76,9 @@ export default function FormElementAdder({
     setForm({ ...form, defaultValue });
   }
 
-  function richTextCheck(event: ChangeEvent<HTMLInputElement>): void {
-    const richText = event.target.checked;
-    setForm({
-      ...form,
-      options: {
-        ...form.options,
-        textarea: { ...form.options?.textarea, richText },
-      },
-    });
-  }
-
   function multiSelectCheck(event: ChangeEvent<HTMLInputElement>): void {
     const multi = event.target.checked;
-    setForm({
-      ...form,
-      options: {
-        ...form.options,
-        select: {
-          ...form.options?.select,
-          multi,
-        },
-      },
-    });
-  }
-
-  function onSelectSizeChange(event: ChangeEvent<HTMLInputElement>): void {
-    const size = Number(event.target.value);
-    setForm({
-      ...form,
-      options: {
-        ...form.options,
-        select: {
-          ...form.options?.select,
-          size,
-        },
-      },
-    });
+    setForm({ ...form, multi });
   }
 
   return (
@@ -155,7 +121,7 @@ export default function FormElementAdder({
             onChange={onCategoryChange}
             defaultValue={'Uncategorized'}
           >
-            {formElement?.categories
+            {formElement?.fieldCategories
               ?.sort()
               .map((category, i) => (
                 <option key={`category-opt-${i}`}>{category.name}</option>
@@ -201,35 +167,6 @@ export default function FormElementAdder({
                     onChange={multiSelectCheck}
                   />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="selectSize" className="form-label">
-                    Select Size
-                  </label>
-                  <input
-                    type="number"
-                    name="selectSize"
-                    className="form-control"
-                    id="selectSize"
-                    onChange={onSelectSizeChange}
-                  />
-                </div>
-              </fieldset>
-            )}
-            {form.type === 'textarea' && (
-              <fieldset>
-                <legend>Text Area Options</legend>
-                <div className="form-group">
-                  <label htmlFor="value" className="form-label">
-                    Rich Text Editor
-                  </label>
-                  <input
-                    type="checkbox"
-                    name="richText"
-                    className="form-control"
-                    id="richText"
-                    onChange={richTextCheck}
-                  />
-                </div>
               </fieldset>
             )}
             {/* <label htmlFor="value">
@@ -272,6 +209,7 @@ export default function FormElementAdder({
               }
               setOptionValueSelection(values);
             }
+
             function onFormOptionsChange() {
               setForm({
                 ...form,

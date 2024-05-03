@@ -1,5 +1,5 @@
 import LoggerFactory from '../logger/LoggerFactory';
-import initDb from './initDb';
+import db from './db';
 
 type TransactionFactoryFactoryParameters = [
   name: string,
@@ -7,23 +7,22 @@ type TransactionFactoryFactoryParameters = [
 ];
 
 type TransactionFactory = {
-  create: () => IDBTransaction;
+  transaction: () => IDBTransaction;
 };
 
 export default class TransactionFactoryFactory {
-  static async createFactory(
+  static createFactory(
     ...[name, storeNames, mode, options]: TransactionFactoryFactoryParameters
-  ): Promise<TransactionFactory> {
+  ): TransactionFactory {
     const logger = LoggerFactory.create(name);
-    const db = initDb;
     return {
-      create: () => {
+      transaction: () => {
         const tx = db.transaction(storeNames, mode, options);
         tx.onabort = (_event) => {
           logger.info(`Transaction aborted`);
         };
         tx.onerror = (_event) => {
-          logger.error(`Transaction errored: ${tx.error}`);
+          logger.error(`Transaction error: ${tx.error?.message}`);
         };
         tx.oncomplete = (_event) => {
           logger.ok(`Transaction completed`);

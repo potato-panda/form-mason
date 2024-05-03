@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
-import { UserFormDataService } from '../../services/UserFormDataService';
 import { Form } from '../../model/Form';
+import FormsService from './FormsService';
+import { useNavigate } from 'react-router-dom';
 
-export const FormList = () => {
-  const formsService = UserFormDataService();
+export function FormList() {
+  const formsService = FormsService;
+
+  const navigate = useNavigate();
 
   const [list, setList] = useState<Form[]>([]);
 
@@ -15,18 +18,41 @@ export const FormList = () => {
 
   useEffect(() => {
     loadForms();
-    return () => {
-    };
+    return () => {};
   }, []);
 
   const formsComponentList = list?.map((form) => (
-    <div key={form.id}>{form.name}</div>
+    <tr key={form.id}>
+      <td scope="row">{form.id}</td>
+      <td>{form.name}</td>
+      <td>{form.description}</td>
+      <td>
+        <button type="button" onClick={() => navigate(`/form/${form.id}/edit`)}>
+          Edit
+        </button>
+        <button type="button" onClick={() => navigate(`/form/${form.id}/live`)}>
+          Use
+        </button>
+      </td>
+    </tr>
   ));
 
   return (
     <>
-      <div>FormList</div>
-      <div>{formsComponentList}</div>
+      <div className="form-list">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Name</th>
+              <th scope="col">Description</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>{formsComponentList}</tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
     </>
   );
-};
+}
