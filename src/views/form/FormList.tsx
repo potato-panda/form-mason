@@ -1,19 +1,41 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Paginator } from '../../components/paginator/Paginator';
 import { Form } from '../../model/Form';
 import FormsService from './FormsService';
-import { useNavigate } from 'react-router-dom';
 
 export function FormList() {
   const formsService = FormsService;
 
   const navigate = useNavigate();
 
-  const [list, setList] = useState<Form[]>([]);
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [forms, setForms] = useState<Form[]>([]);
+  const [paginator, setPaginator] = useState<{
+    total: number;
+  }>({
+    total: 0,
+  });
 
-  async function loadForms() {
-    formsService.getForms().then((forms) => {
-      setList(forms);
-    });
+  async function loadForms({
+    page,
+    pageSize,
+  }: {
+    page?: number;
+    pageSize?: number;
+  } = {}) {
+    formsService
+      .getForms({
+        page,
+        pageSize,
+      })
+      .then((result) => {
+        setForms(result.result);
+        setPaginator({
+          total: result.total,
+        });
+      });
   }
 
   useEffect(() => {
@@ -21,7 +43,12 @@ export function FormList() {
     return () => {};
   }, []);
 
-  const formsComponentList = list?.map((form) => (
+  function changePage(page: number) {
+    setPage(page);
+    loadForms({ page, pageSize });
+  }
+
+  const formsComponentList = forms?.map((form) => (
     <tr key={form.id}>
       <td scope="row">{form.id}</td>
       <td>{form.name}</td>
@@ -39,20 +66,28 @@ export function FormList() {
 
   return (
     <>
-      <div className="form-list">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">ID</th>
-              <th scope="col">Name</th>
-              <th scope="col">Description</th>
-              <th scope="col"></th>
-            </tr>
-          </thead>
-          <tbody>{formsComponentList}</tbody>
-          <tfoot></tfoot>
-        </table>
-      </div>
+      <Paginator
+        changePage={changePage}
+        totalItems={paginator.total}
+        page={page}
+        pageSize={pageSize}
+        totalPages={Math.ceil(paginator.total / pageSize)}
+      >
+        <div className="form-list">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Name</th>
+                <th scope="col">Description</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>{formsComponentList}</tbody>
+            <tfoot></tfoot>
+          </table>
+        </div>
+      </Paginator>
     </>
   );
 }

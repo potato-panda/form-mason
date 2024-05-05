@@ -1,6 +1,6 @@
 const prod = process.env.NODE_ENV === 'production';
 
-export default await new Promise<IDBDatabase>((resolve, reject) => {
+const initdb = new Promise<IDBDatabase>((resolve, reject) => {
   const request = window.indexedDB.open('form-mason', 1);
 
   request.onsuccess = () => {
@@ -21,7 +21,6 @@ export default await new Promise<IDBDatabase>((resolve, reject) => {
         os.createIndex('tags', 'tags', { unique: false, multiEntry: true });
         os.createIndex('nameOrTags', ['name', 'tags'], {
           unique: false,
-          multiEntry: true,
         });
         if (!prod) {
           db.createObjectStore('logs', { autoIncrement: true });
@@ -32,7 +31,7 @@ export default await new Promise<IDBDatabase>((resolve, reject) => {
         break;
     }
     !prod && console.log(`IndexedDB upgraded`);
-    resolve(db);
+    resolveDb(db);
   };
 
   request.onerror = () => {
@@ -50,4 +49,22 @@ export default await new Promise<IDBDatabase>((resolve, reject) => {
       );
     reject();
   };
+
+  function resolveDb(db: IDBDatabase) {
+    db.onabort = () => {
+      !prod && console.log(`IndexedDB was aborted`);
+      reject();
+    };
+    db.onclose = () => {
+      !prod && console.log(`IndexedDB was closed`);
+      resolve(initdb);
+    };
+    db.onversionchange = (event) => {
+      db.close();
+      !prod && console.log(`IndexedDB version changed to ${event.newVersion}`);
+      resolve(initdb);
+    };
+  }
 });
+
+export default await initdb;

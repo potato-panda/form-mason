@@ -8,6 +8,11 @@ type PaginatedSearchOptions = {
   pageSize?: number;
 };
 
+type SearchResult = {
+  total: number;
+  result: Form[];
+};
+
 class FormsService {
   name = 'FormsService';
   logger = LoggerFactory.create(this.name);
@@ -47,27 +52,42 @@ class FormsService {
       page: 1,
       pageSize: 10,
     }
-  ): Promise<Form[]> {
+  ): Promise<SearchResult> {
     return new Promise(async (resolve, reject) => {
       const txFactory = this.readOnlyTransactionFactory;
       const tx = txFactory.transaction();
       const os = tx.objectStore('forms');
-      const request = os.openCursor(
-        IDBKeyRange.bound((page - 1) * pageSize, page * pageSize, true, false)
+      const total = await new Promise<number>((resolve) => {
+        const countRequest = os.count();
+        countRequest.onsuccess = () => {
+          const count = countRequest.result;
+          resolve(count);
+        };
+      });
+      const keyRange = IDBKeyRange.bound(
+        (page - 1) * pageSize,
+        page * pageSize,
+        true,
+        false
       );
-      const pages: Form[] = [];
-      request.onsuccess = () => {
-        const cursor = request.result;
-        if (cursor) {
-          pages.push(cursor.value);
-          return cursor.continue();
-        }
-        resolve(pages);
-      };
-      request.onerror = () => {
-        this.logger.error(request.error);
-        reject(request.error);
-      };
+      const result = await new Promise<Form[]>((resolve) => {
+        const request = os.openCursor(keyRange);
+        const forms: Form[] = [];
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (cursor) {
+            forms.push(cursor.value);
+            return cursor.continue();
+          }
+          resolve(forms);
+        };
+        request.onerror = () => {
+          this.logger.error(request.error);
+          reject(request.error);
+        };
+      });
+
+      resolve({ result, total });
     });
   }
 
