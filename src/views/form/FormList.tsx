@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Paginator } from '../../components/paginator/Paginator';
 import { Form } from '../../model/Form';
 import FormsService from './FormsService';
+import { Context } from '../../layouts/Tabs';
 
 export function FormList() {
   const formsService = FormsService;
 
   const navigate = useNavigate();
+  const tabs = useContext(Context);
 
   const [page, setPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
+  const [pageSize, _setPageSize] = useState<number>(10);
   const [forms, setForms] = useState<Form[]>([]);
   const [paginator, setPaginator] = useState<{
     total: number;
@@ -48,46 +50,69 @@ export function FormList() {
     loadForms({ page, pageSize });
   }
 
-  const formsComponentList = forms?.map((form) => (
-    <tr key={form.id}>
-      <td scope="row">{form.id}</td>
-      <td>{form.name}</td>
-      <td>{form.description}</td>
-      <td>
-        <button type="button" onClick={() => navigate(`/form/${form.id}/edit`)}>
-          Edit
-        </button>
-        <button type="button" onClick={() => navigate(`/form/${form.id}/live`)}>
-          Use
-        </button>
-      </td>
-    </tr>
-  ));
+  const formsComponentList = forms?.map((form) => {
+    const onClick = (path: string, prefix?: string) => {
+      const tab = tabs.openTab(
+        path,
+        `${prefix ? prefix + ' .. ' : ''}${form.name}`
+      );
+
+      navigate(path, {
+        state: {
+          key: tab.key,
+        },
+      });
+    };
+
+    return (
+      <tr key={form.id}>
+        <th scope="row" style={{ minWidth: '40px' }}>{form.id}</th>
+        <td>{form.name}</td>
+        <td>{form.description}</td>
+        <td>
+          <button
+            type="button"
+            onClick={() => onClick(`/form/${form.id}/edit`, 'Edit')}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => onClick(`/form/${form.id}/live`, 'Prod')}
+          >
+            Use
+          </button>
+        </td>
+      </tr>
+    );
+  });
 
   return (
     <>
-      <Paginator
-        changePage={changePage}
-        totalItems={paginator.total}
-        page={page}
-        pageSize={pageSize}
-        totalPages={Math.ceil(paginator.total / pageSize)}
-      >
-        <div className="form-list">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Name</th>
-                <th scope="col">Description</th>
-                <th scope="col"></th>
-              </tr>
-            </thead>
-            <tbody>{formsComponentList}</tbody>
-            <tfoot></tfoot>
-          </table>
-        </div>
-      </Paginator>
+      <div className='padded'>
+        <Paginator
+          changePage={changePage}
+          totalItems={paginator.total}
+          page={page}
+          pageSize={pageSize}
+          totalPages={Math.ceil(paginator.total / pageSize)}
+        >
+          <div className="form-list">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Description</th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody>{formsComponentList}</tbody>
+              <tfoot></tfoot>
+            </table>
+          </div>
+        </Paginator>
+      </div>
     </>
   );
 }

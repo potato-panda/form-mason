@@ -51,3 +51,17 @@ export function Toaster() {
     document.body
   );
 }
+
+Toaster.makeToast = function ({
+  type = 'info',
+  header,
+  message,
+  timeout,
+}: ToastData) {
+  EventBus.emit('toast', {
+    type,
+    header,
+    message,
+    timeout,
+  });
+};

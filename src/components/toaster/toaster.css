@@ -1,5 +1,5 @@
 .toaster {
-  position: fixed;
+  position: absolute;
   display: block;
   background: transparent;
   /* outline: auto; */
@@ -25,6 +25,7 @@
   padding: 0.5rem;
   border-radius: 0.25rem;
   box-shadow: -2px -2px 10px 0px #bbbbbb;
+  z-index: 1;
   /* outline: auto; */
 
   &.ok {

@@ -25,10 +25,10 @@ export function Modal({
   }, []);
 
   return createPortal(
-    <>
+    <div >
       <div className="modal-container">{content({ closeModal })}</div>
       <div className="modal-backdrop"></div>
-    </>,
+    </div>,
     document.body
   );
 }

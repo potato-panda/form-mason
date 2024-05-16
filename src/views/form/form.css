@@ -1,22 +1,38 @@
-.item-form {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  column-gap: 1.25rem;
-  padding: 8px;
+.form-group {
+  margin-bottom: 8px;
+
+  label.form-label:has(
+      + input:not([type='radio']).form-control,
+      + select.form-control,
+      + textarea.form-control
+    ) {
+    display: block;
+  }
+
+  input[type='checkbox'].form-control + label.form-label {
+    margin-left: 4px;
+  }
+
+  fieldset.form-group {
+    select.form-control {
+      width: 100%;
+    }
+    padding: 4px;
+  }
+
+  select.form-control {
+    min-width: clamp(60px, 10vw, 100%);
+  }
+
+  input[type='radio'] + label.form-label {
+    margin-left: 4px;
+  }
+
+  ul:has(li .form-control + .form-label) {
+    list-style-type: none;
+  }
 }
 
-.form-group {
-  /* display: flex;
-  flex-direction: row;
-  row-gap: 0.5rem; */
-  .form-label {
-    display: block;
-    padding: 4px 0;
-  }
-
-  .form-control {
-    display: block;
-    margin-bottom: 8px;
-  }
+.no-resize {
+  resize: none;
 }

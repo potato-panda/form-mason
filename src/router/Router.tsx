@@ -16,7 +16,7 @@ export const router = createBrowserRouter(
           element: <FormList />,
         },
         {
-          path: 'formeditor',
+          path: 'form/edit',
           element: <FormEditor />,
         },
         {
@@ -28,6 +28,8 @@ export const router = createBrowserRouter(
         {
           path: 'form/:id/live',
           element: <LiveForm />,
+          ErrorBoundary: () => <LiveForm.ErrorBoundary />,
+          loader: LiveForm.loader,
         },
       ],
     },

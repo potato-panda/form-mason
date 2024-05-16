@@ -47,8 +47,9 @@ class FormsService {
     });
   }
 
+  // TODO add query
   async getForms(
-    { query, page = 1, pageSize = 10 }: PaginatedSearchOptions = {
+    { page = 1, pageSize = 10 }: PaginatedSearchOptions = {
       page: 1,
       pageSize: 10,
     }

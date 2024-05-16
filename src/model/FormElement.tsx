@@ -1,10 +1,9 @@
-type SingleValueInputs = 'text' | 'textarea' | 'richtext';
+type SingleValueInputs = 'text' | 'textarea' | 'markdown';
 type MultipleValueInputs = 'select' | 'radio';
 export type InputType = SingleValueInputs | MultipleValueInputs;
 
 export interface FormElement<T extends InputType = InputType> {
   type: InputType;
-  order: number;
   name: string;
   label: string;
   category?: string;

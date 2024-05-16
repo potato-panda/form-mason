@@ -1,0 +1,14 @@
+.element-form {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  column-gap: 1.25rem;
+  padding: 8px;
+}
+
+.md-preview {
+  padding: 8px;
+  background-color: white;
+  outline: rgb(118, 118, 118) solid 1px;
+  border-radius: 2px;
+}

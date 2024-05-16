@@ -1,4 +1,9 @@
-import { ChangeEvent, createElement, useState } from 'react';
+import {
+  ChangeEvent,
+  ReactNode,
+  createElement,
+  useState,
+} from 'react';
 import {
   LoaderFunction,
   isRouteErrorResponse,
@@ -9,6 +14,7 @@ import {
 } from 'react-router-dom';
 import StatefulStyledInput from '../../components/inputs/StatefulStyledInput';
 import { Modal } from '../../components/modals/Modal';
+import { Toaster } from '../../components/toaster/Toaster';
 import TransactionFactoryFactory from '../../db/TransactionFactoryFactory';
 import { Form } from '../../model/Form';
 import { FormElement } from '../../model/FormElement';
@@ -16,12 +22,15 @@ import Unicode from '../../utils/Unicode';
 import { FormUtils } from '../../utils/forms/FormUtils';
 import FormElementAdder from './FormElementAdder';
 import FormsService from './FormsService';
+import './formEditor.css';
 
 export default function FormEditor() {
   const original = (useLoaderData() as Form) ?? FormUtils.create();
-  const [form, setForm] = useState<Form>(original ?? FormUtils.create());
+  const [form, setForm] = useState<Form>(original);
   const [categorySelection, setCategorySelection] = useState<string[]>([]);
-  const [activeModal, setActiveModal] = useState<React.ReactNode>(null);
+  const [activeModal, setActiveModal] = useState<ReactNode>(null);
+
+  const navigate = useNavigate();
 
   const readWriteTransactionFactory = TransactionFactoryFactory.createFactory(
     'ReadWrite|FormEditor',
@@ -30,18 +39,18 @@ export default function FormEditor() {
   );
 
   const addFormElementModal = Modal({
-    content: ({ closeModal }) => (
+    content: ({ closeModal }): ReactNode => (
       <>
         <div className="modal-header">
-          <h4>Add Form Element</h4>
+          <h4>Add Field</h4>
           <button type="button" onClick={closeModal}>
             &#10006;
           </button>
         </div>
         <div className="modal-body">
           <FormElementAdder
-            formElement={form}
-            addItem={addFormElement}
+            form={form}
+            addFormElement={addFormElement}
           ></FormElementAdder>
         </div>
       </>
@@ -49,63 +58,23 @@ export default function FormEditor() {
     closeModal: () => closeModals(),
   });
 
-  const addCategoryModal = Modal({
-    content: ({ closeModal }) =>
-      createElement(() => {
-        const [category, setCategory] = useState('');
-        return (
-          <>
-            <div className="modal-header">
-              <h4>Add Category</h4>
-              <button type="button" onClick={closeModal}>
-                &#10006;
-              </button>
-            </div>
-            <div className="modal-body">
-              <form>
-                <div className="form-group">
-                  <label htmlFor="category">Category</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => addCategoryOption(category)}
-                >
-                  Add
-                </button>
-              </form>
-            </div>
-          </>
-        );
-      }),
-    closeModal: () => closeModals(),
-  });
-
-  function setFormName(name: string) {
+  function setFormName(name: string): void {
     setForm({ ...form, name });
   }
 
-  function addFormElement(item: FormElement) {
-    setForm({ ...form, fields: [...form.fields, item as any] });
+  function addFormElement(element: FormElement): void {
+    setForm({ ...form, fields: [...form.fields, element] });
+    closeModals();
   }
 
-  function removeFormElement(item: FormElement) {
+  function deleteFormElement(element: FormElement): void {
     setForm({
       ...form,
-      fields: [...form.fields.filter((el: FormElement) => el !== item)],
+      fields: [...form.fields.filter((el: FormElement) => el !== element)],
     });
   }
 
-  function openAddCategoryModal() {
-    setActiveModal(addCategoryModal);
-  }
-
-  function addCategoryOption(category: string) {
+  function addCategoryOption(category: string): void {
     if (form.fieldCategories.some((i) => i.name === category)) return;
     setForm({
       ...form,
@@ -118,15 +87,17 @@ export default function FormEditor() {
     });
   }
 
-  function openAddFormItemModal() {
+  function openAddFormItemModal(): void {
     setActiveModal(addFormElementModal);
   }
 
-  function closeModals() {
+  function closeModals(): void {
     setActiveModal(null);
   }
 
-  function onCategorySelectionOptionsChange(e: ChangeEvent<HTMLSelectElement>) {
+  function onCategorySelectionOptionsChange(
+    e: ChangeEvent<HTMLSelectElement>
+  ): void {
     const options = e.target.options;
     const values = [];
 
@@ -138,38 +109,51 @@ export default function FormEditor() {
     setCategorySelection(values);
   }
 
-  function removeCategorySelectionOptions() {
-    if (form && setForm)
-      setForm({
-        ...form,
-        fieldCategories: (form?.fieldCategories ?? []).filter(
-          (i) => !categorySelection.includes(i.name)
-        ),
-      });
+  function deleteCategorySelectionOption(): void {
+    setForm({
+      ...form,
+      fieldCategories: (form?.fieldCategories ?? []).filter(
+        (i) => !categorySelection.includes(i.name)
+      ),
+    });
   }
 
-  function isFormValid() {
+  function isFormValid(): boolean {
     const isValid =
       typeof form.name === 'string' && form.name.trim().length > 0;
     return isValid;
   }
 
-  const saveForm = async () => {
+  async function saveForm(close?: boolean): Promise<void> {
     if (!isFormValid()) return;
     const tx = readWriteTransactionFactory.transaction();
     const os = tx.objectStore('forms');
-    const request = os.add(form);
+    const request = original.id ? os.put(form) : os.add(form);
     request.onsuccess = () => {
+      Toaster.makeToast({
+        header: 'Success',
+        message: `Form ${original.id ? 'updated' : 'saved'}`,
+        type: 'ok',
+        timeout: 8000,
+      });
+      if (close) navigate('/');
       return;
     };
     request.onerror = () => {
+      Toaster.makeToast({
+        header: 'Error',
+        message: `Form ${original.id ? 'update' : 'save'} failed: ${
+          request.error ?? 'Unknown Error'
+        }`,
+        type: 'error',
+      });
       return request.error;
     };
-  };
+  }
 
   return (
     <>
-      <div className="form-builder">
+      <div className="form-editor">
         <StatefulStyledInput
           name="name"
           id="name"
@@ -178,8 +162,11 @@ export default function FormEditor() {
           setValue={setFormName}
         />
         <div className="flex row">
-          <button type="button" onClick={saveForm}>
+          <button type="button" onClick={(_) => saveForm()}>
             Save
+          </button>
+          <button type="button" onClick={(_) => saveForm(true)}>
+            Save and Close
           </button>
         </div>
         <div className="form-options">
@@ -192,6 +179,8 @@ export default function FormEditor() {
                 <select
                   name="category"
                   id="category"
+                  className="form-control"
+                  style={{ width: '100%' }}
                   onChange={onCategorySelectionOptionsChange}
                   value={categorySelection}
                   multiple
@@ -202,43 +191,65 @@ export default function FormEditor() {
                     <option key={`category-opt-${i}`}>{category.name}</option>
                   ))}
                 </select>
-                <div>
-                  <button type="button" onClick={openAddCategoryModal}>
-                    Add
-                  </button>
-                  <button
-                    type="button"
-                    onClick={removeCategorySelectionOptions}
-                    disabled={
-                      categorySelection.length === 0 ||
-                      !categorySelection ||
-                      (categorySelection[0] === 'Uncategorized' &&
-                        !(categorySelection.length > 1))
-                    }
-                  >
-                    Remove
-                  </button>
+                <div className="flex">
+                  {createElement(() => {
+                    const [category, setCategory] = useState('');
+                    return (
+                      <>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={category}
+                          onChange={(e) => setCategory(e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => addCategoryOption(category)}
+                        >
+                          Add
+                        </button>
+                        <button
+                          type="button"
+                          onClick={deleteCategorySelectionOption}
+                          disabled={
+                            categorySelection.length === 0 ||
+                            !categorySelection ||
+                            (categorySelection[0] === 'Uncategorized' &&
+                              !(categorySelection.length > 1))
+                          }
+                        >
+                          Delete
+                        </button>
+                      </>
+                    );
+                  })}
                 </div>
               </fieldset>
             </div>
           </div>
         </div>
-        <button type="button" onClick={openAddFormItemModal}>
-          Add Form Element
-        </button>
+
         <hr />
-        <div id="form-builder" className="form-builder">
+
+        <div>
+          <button type="button" onClick={openAddFormItemModal}>
+            Add Field
+          </button>
+        </div>
+
+        <div id="form-editor" className="form-editor">
           {
             <>
-              <table className="form-builder-table">
+              <table className="form-editor-table">
                 <thead>
                   <tr>
-                    <th scope="col">Name</th>
+                    <th scope="col">Field Name</th>
                     <th scope="col">Label</th>
                     <th scope="col">Category</th>
                     <th scope="col">Type</th>
                     <th scope="col">Field Options</th>
-                    <th scope="col">Value</th>
+                    <th scope="col">Options Values</th>
+                    <th scope="col">Default Value</th>
                     <th scope="col">Actions</th>
                   </tr>
                 </thead>
@@ -248,7 +259,8 @@ export default function FormEditor() {
                       <tr key={i}>
                         <td>{f.name}</td>
                         <td>{f.label}</td>
-                        <td>{f.category}</td>
+                        <td>{f.category || 'Uncategorized'}</td>
+                        <td>{f.type}</td>
                         <td>
                           {createElement(() => {
                             const options = [];
@@ -270,30 +282,36 @@ export default function FormEditor() {
                               case 'select':
                                 options.push({
                                   key: 'Multi Select',
-                                  value: f.multi ? 'Enabled' : 'Disabled',
+                                  value: f.multi ? 'Yes' : 'No',
                                 });
                                 break;
                               default:
                                 break;
                             }
-                            return <></>;
+                            return (
+                              <>
+                                {options.map((o) => (
+                                  <div key={o.key}>
+                                    {o.key}: {o.value}
+                                  </div>
+                                ))}
+                              </>
+                            );
                           })}
                         </td>
                         <td>
-                          {f.type}
-                          {(f.type === 'radio' || f.type === 'select') &&
+                          {f.type === 'radio' || f.type === 'select' ? (
                             f.optionValues?.length &&
                             f.optionValues?.length > 0 && (
-                              <>
-                                <hr />
-                                <div>Options</div>
-                                <ul>
-                                  {f.optionValues.map((v) => (
-                                    <li>{v}</li>
-                                  ))}
-                                </ul>
-                              </>
-                            )}
+                              <ul className="inside-list-style">
+                                {f.optionValues.map((v) => (
+                                  <li>{v}</li>
+                                ))}
+                              </ul>
+                            )
+                          ) : (
+                            <span>Not Applicable</span>
+                          )}
                         </td>
                         <td>{f.defaultValue}</td>
                         <td>
@@ -302,7 +320,7 @@ export default function FormEditor() {
                             <button type="button">Copy</button>
                             <button
                               type="button"
-                              onClick={() => removeFormElement(f)}
+                              onClick={() => deleteFormElement(f)}
                             >
                               Delete
                             </button>
@@ -312,7 +330,7 @@ export default function FormEditor() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center' }}>
+                      <td colSpan={8} style={{ textAlign: 'center' }}>
                         <span>No Form Elements Added</span>
                       </td>
                     </tr>
@@ -355,9 +373,11 @@ FormEditor.ErrorBoundary = function () {
 FormEditor.loader = (async ({ params }) => {
   const id = Number(params['id']);
   const form = await FormsService.getForm(id);
-  if (!form)
+  if (!form) {
     throw json({
       message: 'Form not found',
     });
+  }
+
   return form;
 }) as LoaderFunction;

@@ -1,0 +1,115 @@
+#app-layout {
+  --topbar-height: min(2.5rem, 50px);
+  --sidebar-width: 200px;
+
+  display: grid;
+  place-content: center;
+  overflow-x: hidden;
+  height: 100vh;
+  min-height: 600px;
+  /* grid-template:
+    [topbar-start] "topbar topbar" var(--topbar-height) [topbar-end]
+    [view-start] "sidebar content" 1fr / min-content 1fr
+    [view-end]; */
+  grid-template-rows:
+    [topbar-start] var(--topbar-height)
+    [topbar-end view-start] 1fr
+    [view-end];
+  grid-template-columns: min-content 1fr;
+  grid-template-areas: 'topbar topbar' 'sidebar content';
+}
+
+#app-topbar {
+  background-color: white;
+  grid-area: topbar;
+}
+
+#app-sidebar {
+  background-color: var(--bg-colour);
+  grid-area: sidebar;
+  z-index: 1;
+  top: var(--topbar-height);
+  /* overflow: hidden; */
+
+  .sidebar-container {
+    width: 0px;
+    left: -200px;
+    position: absolute;
+    /* transition: width 0.2s; */
+
+    &.show {
+      left: 0;
+      width: var(--sidebar-width);
+      position: relative;
+    }
+  }
+}
+
+#app-content {
+  width: 100vw;
+  background-color: var(--bg-colour);
+  grid-area: content;
+  box-shadow: 0px 0 5px 2px var(--outline-colour);
+  z-index: 1;
+}
+
+@media screen and (max-width: 800px) {
+  /* #app-layout {
+    grid-template:
+      [topbar-start] 'topbar' var(--topbar-height) [topbar-end]
+      [view-start] 'content' 1fr [view-end];
+  } */
+
+  #app-sidebar {
+    position: absolute;
+    height: calc(100% - var(--topbar-height));
+  }
+}
+
+.tab-bar {
+  height: 100%;
+  display: flex;
+  align-items: end;
+}
+
+.tab {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+
+  background: white;
+  padding: 2px 0.5rem 8px 0.5rem;
+  border-radius: 2px 2px 0px 0px;
+  border: solid var(--outline-colour);
+  border-width: 1px 0px 0px 1px;
+  &:last-of-type {
+    border-width: 1px 1px 0px 1px;
+  }
+
+  &:has(.tab-label.active) {
+    background-color: var(--bg-colour);
+  }
+
+  .tab-label {
+    color: rgb(143, 143, 143);
+    text-decoration: none;
+    &.active {
+      color: rgb(103, 164, 255);
+    }
+  }
+
+  &:has(.tab-label.active) {
+    z-index: 2;
+  }
+
+  .tab-close {
+    font-size: x-small;
+    opacity: 20%;
+    margin-left: 0.25rem;
+
+    &:hover {
+      opacity: 100%;
+      cursor: pointer;
+    }
+  }
+}

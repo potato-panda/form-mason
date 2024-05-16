@@ -1,353 +1,555 @@
-import { ChangeEvent, MouseEvent, createElement, useState } from 'react';
-import { FormElement, InputType } from '../../model/FormElement';
-import './form.css';
+import { ChangeEvent, MouseEvent, useState } from 'react';
+import Markdown from 'react-markdown';
 import { Form } from '../../model/Form';
+import { FormElement, InputType } from '../../model/FormElement';
+import './elementForm.css';
+import './form.css';
 
-const defaultForm = () => {
-  return structuredClone({
-    type: 'text',
-  }) as FormElement;
-};
+const fieldTypesLabelled = [
+  ['text', 'Text'],
+  ['textarea', 'Text Area'],
+  ['select', 'Select'],
+  ['radio', 'Radio'],
+  ['markdown', 'Markdown'],
+] as const;
 
 export default function FormElementAdder({
-  formElement,
-  addItem,
+  form: { fieldCategories },
+  addFormElement,
 }: {
-  formElement?: Form;
-  addItem?: (form: FormElement) => void;
+  form: Form;
+  addFormElement: (form: FormElement) => void;
 }) {
-  const [form, setForm] = useState(defaultForm());
+  const newElement: FormElement = {
+    type: 'text',
+    name: '',
+    label: '',
+    multi: false,
+    value: '',
+    defaultValue: '',
+  };
 
-  function resetForm() {
-    setForm(defaultForm());
+  const [element, setElement] = useState<FormElement>(newElement);
+  const [errors, setErrors] = useState<Error[]>([]);
+
+  function resetForm(): void {
+    setElement(newElement);
   }
 
-  function addToForm() {
-    addItem && addItem(form);
-    resetForm();
-  }
+  function addToForm(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setErrors([]);
 
-  function onTypeChange(e: ChangeEvent<HTMLSelectElement>) {
-    const type = e.target.value as InputType;
-    const diffChangeToSelect =
-      form.type !== type && (type === 'select' || type === 'radio');
-    const value = diffChangeToSelect ? [] : '';
-    setForm({
-      ...form,
-      type,
-      value,
-      defaultValue: value,
-      optionValues: diffChangeToSelect ? [] : undefined,
-    });
-  }
-
-  function onLabelChange(e: ChangeEvent<HTMLInputElement>) {
-    const label = e.target.value;
-    setForm({ ...form, label });
-  }
-
-  function onNameChange(e: ChangeEvent<HTMLInputElement>) {
-    const name = e.target.value;
-    setForm({ ...form, name });
-  }
-
-  function onCategoryChange(e: ChangeEvent<HTMLSelectElement>) {
-    const category = e.target.value;
-    setForm({ ...form, category });
-  }
-
-  function onDefaultValueChange(e: ChangeEvent<HTMLInputElement>) {
-    const defaultValue = e.target.value;
-    setForm({ ...form, defaultValue });
-  }
-
-  function onDefaultTextAreaChange(e: ChangeEvent<HTMLTextAreaElement>) {
-    const defaultValue = e.target.value;
-    setForm({ ...form, defaultValue });
-  }
-
-  function onDefaultSelectValueChange(e: ChangeEvent<HTMLSelectElement>) {
-    const defaultValue = [];
-    for (const opt of e.target.options) {
-      if (opt.selected) {
-        defaultValue.push(opt.value);
+    (Object.entries(element) as [keyof FormElement, any][]).forEach(
+      ([key, value]) => {
+        // required fields
+        if ([element.name, element.label, element.type].includes(key)) {
+          if (!value || value.length === 0) {
+            errors.push({
+              name: key,
+              message: `${key} is required`,
+            });
+          }
+        }
+        // required options if type is select or radio
+        if (key === 'type' && (value === 'select' || value === 'radio')) {
+          if (!element.optionValues || element.optionValues.length === 0) {
+            errors.push({
+              name: key,
+              message: `${key} option(s) are required`,
+            });
+          }
+        }
       }
-    }
-    setForm({ ...form, defaultValue });
-  }
+    );
 
-  function multiSelectCheck(event: ChangeEvent<HTMLInputElement>): void {
-    const multi = event.target.checked;
-    setForm({ ...form, multi });
+    setErrors(errors);
+
+    if (errors.length === 0) {
+      addFormElement(element);
+      resetForm();
+    }
   }
 
   return (
     <>
-      <form className="item-form">
-        <div className="form-group">
-          <label htmlFor="name" className="form-label">
-            Name
-          </label>
-          <input
-            type="text"
-            name="name"
-            className="form-control"
-            id="name"
-            onChange={onNameChange}
-          />
-        </div>
+      <form
+        className="element-form form-group flex column"
+        onSubmit={addToForm}
+      >
+        <FieldNameForm element={element} setElement={setElement} />
 
-        <div className="form-group">
-          <label htmlFor="label" className="form-label">
-            Label
-          </label>
-          <input
-            type="text"
-            name="label"
-            className="form-control"
-            id="label"
-            onChange={onLabelChange}
-          />
-        </div>
+        <FieldLabelForm element={element} setElement={setElement} />
 
-        <div className="form-group">
-          <label htmlFor="category" className="form-label">
-            Category
-          </label>
-          <select
-            name="category"
-            className="form-control"
-            id="category"
-            onChange={onCategoryChange}
-            defaultValue={'Uncategorized'}
-          >
-            {formElement?.fieldCategories
-              ?.sort()
-              .map((category, i) => (
-                <option key={`category-opt-${i}`}>{category.name}</option>
-              ))}
-            <option key="category-opt--1">Uncategorized</option>
-          </select>
-        </div>
+        <FieldCategoryForm
+          fieldCategories={fieldCategories}
+          element={element}
+          setElement={setElement}
+        />
 
-        <div className="form-group">
-          <label htmlFor="type" className="form-label">
-            Type
-          </label>
-          <select
-            name="type"
-            className="form-control"
-            id="type"
-            onChange={onTypeChange}
-            defaultValue={form.type}
-          >
-            <option value="text">Text</option>
-            <option value="textarea">Text Area</option>
-            <option value="select">Select</option>
-            <option value="radio">Radio</option>
-          </select>
-        </div>
+        <FieldTypeForm element={element} setElement={setElement} />
 
-        {/* Options form */}
-        {(form.type === 'select' || form.type === 'textarea') && (
-          <fieldset>
-            <legend>Options</legend>
-            {form.type === 'select' && (
-              <fieldset>
-                <legend>Select Options</legend>
-                <div className="form-group">
-                  <label htmlFor="multiSelect" className="form-label">
-                    Multi Option Select
-                  </label>
-                  <input
-                    type="checkbox"
-                    name="multiSelect"
-                    className="form-control"
-                    id="multiSelect"
-                    onChange={multiSelectCheck}
-                  />
-                </div>
-              </fieldset>
-            )}
-            {/* <label htmlFor="value">
-              Omit from Copy
-              <input type="checkbox" name="omitFromCopy" id="omitFromCopy" />
-            </label> */}
-          </fieldset>
-        )}
+        <FieldOptionValuesForm element={element} setElement={setElement} />
 
-        {/* Options Values form for forms with multiple choice */}
-        {(form.type === 'select' || form.type === 'radio') &&
-          createElement(() => {
-            const [optionValueSelection, setOptionValueSelection] = useState<
-              string[]
-            >([]);
+        <FieldDefaultValueForm element={element} setElement={setElement} />
 
-            const [optionValueInput, setOptionValueInput] =
-              useState<string>('');
-
-            function addOptionValue(
-              _event: MouseEvent<HTMLButtonElement>
-            ): void {
-              const optionValue = optionValueInput;
-              if (optionValue) {
-                setForm({
-                  ...form,
-                  optionValues: [...(form?.optionValues ?? []), optionValue],
-                });
-                setOptionValueInput('');
-              }
-            }
-
-            function onSelectionChange(e: ChangeEvent<HTMLSelectElement>) {
-              const options = e.target.options;
-              const values = [];
-              for (const i in options) {
-                if (options[i].selected) {
-                  values.push(options[i].value);
-                }
-              }
-              setOptionValueSelection(values);
-            }
-
-            function onFormOptionsChange() {
-              setForm({
-                ...form,
-                optionValues: [
-                  ...(form.optionValues?.filter(
-                    (i) => !optionValueSelection.includes(i)
-                  ) ?? []),
-                ],
-              });
-            }
-
-            return (
-              <fieldset>
-                <legend>Option Values</legend>
-                <select
-                  name="optionValue"
-                  className="form-control"
-                  multiple
-                  size={4}
-                  onChange={onSelectionChange}
-                >
-                  {form.optionValues?.map((value, index) => (
-                    <option key={`select-opt-${index}`}>{value}</option>
-                  ))}
-                </select>
-                <label htmlFor="optionValue" className="form-label"></label>
-                <input
-                  type="text"
-                  name="optionValue"
-                  className="form-control"
-                  id="optionValue"
-                  value={optionValueInput}
-                  onChange={(e) => setOptionValueInput(e.target.value)}
-                />
-                <button
-                  type="button"
-                  name="addOption"
-                  className=""
-                  id="addOption"
-                  onClick={addOptionValue}
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  name="deleteSelection"
-                  className="form-control"
-                  id="deleteSelection"
-                  onClick={onFormOptionsChange}
-                >
-                  Remove
-                </button>
-              </fieldset>
-            );
-          })}
-
-        {/* Default Value form for forms with multiple choice */}
-        <div className="form-group">
-          {form.type !== 'radio' && (
-            <label htmlFor="defaultValue" className="form-label">
-              Default Value
-            </label>
-          )}
-          {form.type === 'text' && (
-            <input
-              type="text"
-              name="defaultValue"
-              className="form-control"
-              id="defaultValue"
-              placeholder=""
-              onChange={onDefaultValueChange}
-            />
-          )}
-          {form.type === 'select' && (
-            <select
-              name="defaultValue"
-              className="form-control"
-              id="defaultValue"
-              onChange={onDefaultSelectValueChange}
-            >
-              {form.optionValues?.length && form.optionValues.length > 0 ? (
-                <>
-                  <option key={`default-option-value--1`}></option>
-                  {form.optionValues.map((value, index) => (
-                    <option value={value} key={`default-option-value-${index}`}>
-                      {value}
-                    </option>
-                  ))}
-                </>
-              ) : (
-                <option disabled selected>
-                  Add an Option Value first
-                </option>
-              )}
-            </select>
-          )}
-          {form.type === 'radio' && (
-            <fieldset>
-              <legend>Default Values</legend>
-              <div>
-                {form.optionValues?.map((value, index) => (
-                  <>
-                    <label
-                      htmlFor={`radio-opt-${index}`}
-                      className="form-label"
-                    >
-                      {value}
-                    </label>
-                    <input
-                      type="radio"
-                      id={`radio-opt-${index}`}
-                      name={`radio-opt-${index}`}
-                      className="form-control"
-                      key={`default-option-value-${index}`}
-                      radioGroup={`radio-opt-${index}`}
-                      value={value}
-                      onChange={onDefaultValueChange}
-                    />
-                  </>
-                ))}
-              </div>
-            </fieldset>
-          )}
-          {form.type === 'textarea' && (
-            <textarea
-              id="defaultValue"
-              name="defaultValue"
-              className="form-control"
-              onChange={onDefaultTextAreaChange}
-            />
-          )}
-        </div>
         <div>
-          <button type="button" onClick={addToForm}>
-            Add
-          </button>
+          <ul>
+            {errors.map((error, i) => (
+              <li key={`error-${i}`}>{error.name}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <button type="submit">Add to Form</button>
         </div>
       </form>
     </>
+  );
+}
+function FieldDefaultValueForm({
+  element,
+  setElement,
+}: {
+  element: FormElement<InputType>;
+  setElement: React.Dispatch<React.SetStateAction<FormElement<InputType>>>;
+}) {
+  function onDefaultValueChange(event: ChangeEvent<HTMLInputElement>): void {
+    setElement({ ...element, defaultValue: event.target.value });
+  }
+
+  function onDefaultTextAreaChange(
+    event: ChangeEvent<HTMLTextAreaElement>
+  ): void {
+    setElement({ ...element, defaultValue: event.target.value });
+  }
+
+  function onDefaultSelectValueChange(
+    event: ChangeEvent<HTMLSelectElement>
+  ): void {
+    setElement({
+      ...element,
+      defaultValue: Array.from(
+        event.target.selectedOptions,
+        (option) => option.value
+      ),
+    });
+  }
+
+  return (
+    <div className="form-group">
+      {element.type !== 'radio' && (
+        <label htmlFor="defaultValue" className="form-label">
+          Default Value
+        </label>
+      )}
+      {element.type === 'text' && (
+        <input
+          type="text"
+          name="defaultValue"
+          className="form-control"
+          id="defaultValue"
+          placeholder=""
+          value={element.defaultValue}
+          onChange={onDefaultValueChange}
+          title="Default value for the field. Leave empty for no default value."
+        />
+      )}
+      {element.type === 'select' && (
+        <select
+          name="defaultValue"
+          className="form-control"
+          id="defaultValue"
+          multiple={element.multi ? true : false}
+          size={element.multi ? 4 : undefined}
+          value={element.defaultValue}
+          onChange={onDefaultSelectValueChange}
+        >
+          {!element.multi && (
+            <option value={''} key={`default-option-value--0`}></option>
+          )}
+          {element.optionValues?.map((value, index) => (
+            <option value={value} key={`default-option-value-${index}`}>
+              {value}
+            </option>
+          ))}
+        </select>
+      )}
+      {element.type === 'radio' && (
+        <fieldset className="form-group">
+          <legend>Default Values</legend>
+          <ul>
+            {element.optionValues?.map((value, index) => (
+              <li>
+                <input
+                  type="radio"
+                  id={`radio-opt-${index}`}
+                  name={`radio-opt-${index}`}
+                  className="form-control"
+                  key={`default-option-value-${index}`}
+                  radioGroup={`radio-opt-${index}`}
+                  value={value}
+                  onChange={onDefaultValueChange}
+                />
+                <label htmlFor={`radio-opt-${index}`} className="form-label">
+                  {value}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </fieldset>
+      )}
+      {element.type === 'textarea' && (
+        <textarea
+          id="defaultValue"
+          name="defaultValue"
+          className="form-control"
+          value={element.defaultValue}
+          onChange={onDefaultTextAreaChange}
+        />
+      )}
+      {element.type === 'markdown' && (
+        <>
+          <textarea
+            id="defaultValue"
+            name="defaultValue"
+            className="form-control"
+            value={element.defaultValue}
+            onChange={onDefaultTextAreaChange}
+          />
+          <div>
+            <label>Preview</label>
+            <Markdown className="md-preview">
+              {element.defaultValue?.toString()}
+            </Markdown>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function FieldOptionValuesForm({
+  element,
+  setElement,
+}: {
+  element: FormElement<InputType>;
+  setElement: React.Dispatch<React.SetStateAction<FormElement<InputType>>>;
+}) {
+  const [optionValueSelection, setOptionValueSelection] = useState<
+    string | string[] | undefined
+  >(undefined);
+
+  const [optionValueTextInput, setOptionValueTextInput] = useState<string>('');
+
+  function addOptionValue(_event: MouseEvent<HTMLButtonElement>): void {
+    const optionValue = optionValueTextInput;
+    if (optionValue && !element.optionValues?.includes(optionValue)) {
+      setElement({
+        ...element,
+        optionValues: [...(element.optionValues ?? []), optionValue],
+      });
+      setOptionValueTextInput('');
+    }
+  }
+
+  function editOptionValue(_event: MouseEvent<HTMLButtonElement>): void {
+    if (
+      optionValueTextInput &&
+      optionValueTextInput.length > 0 &&
+      !element.optionValues?.includes(optionValueTextInput)
+    ) {
+      if (
+        Array.isArray(optionValueSelection) &&
+        optionValueSelection.length === 1
+      ) {
+        element.optionValues?.splice(
+          element.optionValues?.indexOf(optionValueSelection[0]),
+          1,
+          optionValueTextInput
+        );
+      }
+      setElement({
+        ...element,
+        optionValues: element.optionValues,
+      });
+      setOptionValueTextInput('');
+    }
+  }
+
+  function onSelectionChange(event: ChangeEvent<HTMLSelectElement>): void {
+    const values = Array.from(
+      event.target.selectedOptions,
+      (option) => option.value
+    );
+    setOptionValueSelection(values);
+  }
+
+  function deleteOptionValue(): void {
+    setElement({
+      ...element,
+      optionValues:
+        typeof optionValueSelection === 'string'
+          ? element.optionValues?.filter((i) => i !== optionValueSelection)
+          : element.optionValues?.filter(
+              (i) => !optionValueSelection?.includes(i)
+            ) ?? [],
+    });
+  }
+
+  return (
+    ['select', 'radio'].includes(element.type) && (
+      <fieldset className="form-group">
+        <legend>
+          Option Values
+          {` (${element.optionValues?.length})`}
+        </legend>
+        <select
+          name="optionValue"
+          className="form-control"
+          id="selectOptionValue"
+          multiple={true}
+          size={4}
+          value={optionValueSelection}
+          onChange={onSelectionChange}
+          title="Click to select and unselect options to delete; Select (1) option to edit."
+        >
+          {element.optionValues?.map((value, index) => (
+            <option key={`select-opt-${index}`} value={value}>
+              {value}
+            </option>
+          ))}
+        </select>
+        <div>
+          <label htmlFor="optionValue" className="form-label"></label>
+          <input
+            type="text"
+            name="optionValue"
+            className="form-control"
+            id="optionValue"
+            value={optionValueTextInput}
+            onChange={(e) => setOptionValueTextInput(e.target.value)}
+            title="Enter option value to add, or select (1) option above and apply edit."
+            placeholder={
+              optionValueSelection?.length === 1
+                ? `Edit '${optionValueSelection[0]}'`
+                : 'Enter option value to add'
+            }
+          />
+          <button
+            type="button"
+            name="addOption"
+            className=""
+            id="addOption"
+            onClick={addOptionValue}
+            disabled={
+              !optionValueTextInput &&
+              (!optionValueSelection || optionValueSelection.length > 0)
+            }
+          >
+            Add
+          </button>
+          <button
+            type="button"
+            name="editOption"
+            className=""
+            id="editOption"
+            disabled={optionValueSelection?.length !== 1}
+            onClick={editOptionValue}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            name="deleteSelection"
+            className="form-control"
+            id="deleteSelection"
+            onClick={deleteOptionValue}
+            disabled={
+              !optionValueSelection || optionValueSelection.length === 0
+            }
+            style={{ minWidth: '60px' }}
+          >
+            Del
+            {optionValueSelection &&
+              optionValueSelection.length > 0 &&
+              `(${optionValueSelection.length})`}
+          </button>
+        </div>
+      </fieldset>
+    )
+  );
+}
+
+function FieldTypeForm({
+  element,
+  setElement,
+}: {
+  element: FormElement<InputType>;
+  setElement: React.Dispatch<React.SetStateAction<FormElement<InputType>>>;
+}) {
+  function onTypeChange(event: ChangeEvent<HTMLSelectElement>): void {
+    event.preventDefault();
+    const type = event.target.value as InputType;
+    const wasChangedToSelect =
+      element.type !== type && (type === 'select' || type === 'radio');
+    const value = wasChangedToSelect && element.multi ? ([] as string[]) : '';
+    setElement({
+      ...element,
+      type,
+      value,
+      defaultValue: value,
+      optionValues: wasChangedToSelect ? [] : undefined,
+    });
+  }
+
+  function multiSelectCheck(event: ChangeEvent<HTMLInputElement>): void {
+    const multi = event.target.checked;
+    setElement({
+      ...element,
+      multi,
+      value: multi ? [] : '',
+      defaultValue: multi ? [] : '',
+    });
+  }
+
+  return (
+    <div className="form-group">
+      <label htmlFor="type" className="form-label">
+        Type
+      </label>
+      <select
+        name="type"
+        required
+        className="form-control"
+        id="type"
+        value={element.type}
+        onChange={onTypeChange}
+      >
+        {fieldTypesLabelled.map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </select>
+      {element.type === 'select' && (
+        <div className="form-group">
+          <input
+            type="checkbox"
+            name="multiSelect"
+            className="form-control"
+            id="multiSelect"
+            checked={element.multi}
+            onChange={multiSelectCheck}
+          />
+          <label
+            htmlFor="multiSelect"
+            className="form-label"
+            title="If checked, multiple options can be selected"
+          >
+            Multi Option Select
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FieldCategoryForm({
+  fieldCategories,
+  element,
+  setElement,
+}: {
+  fieldCategories: Form['fieldCategories'];
+  element: FormElement<InputType>;
+  setElement: React.Dispatch<React.SetStateAction<FormElement<InputType>>>;
+}) {
+  function onCategoryChange(event: ChangeEvent<HTMLSelectElement>): void {
+    setElement({ ...element, category: event.target.value });
+  }
+
+  return (
+    <div className="form-group">
+      <label htmlFor="category" className="form-label">
+        Category
+      </label>
+      <select
+        name="category"
+        className="form-control"
+        id="category"
+        value={element.category}
+        onChange={onCategoryChange}
+      >
+        {fieldCategories.sort().map((category, i) => (
+          <option key={`category-opt-${i}`}>{category.name}</option>
+        ))}
+        <option key="category-opt--1">Uncategorized</option>
+      </select>
+    </div>
+  );
+}
+
+function FieldLabelForm({
+  element,
+  setElement,
+}: {
+  element: FormElement<InputType>;
+  setElement: React.Dispatch<React.SetStateAction<FormElement<InputType>>>;
+}) {
+  function onLabelChange(event: ChangeEvent<HTMLTextAreaElement>): void {
+    setElement({ ...element, label: event.target.value });
+  }
+
+  return (
+    <div className="form-group">
+      <label htmlFor="label" className="form-label">
+        Label
+      </label>
+      <textarea
+        name="label"
+        required
+        className="form-control no-resize"
+        id="label"
+        value={element.label}
+        cols={30}
+        rows={4}
+        onChange={onLabelChange}
+        title='Enter the field label here. For example: "Email Address" or "What is your favourite food?"'
+        placeholder='Enter the field label here. For example: "Email Address" or "What is your favourite food?"'
+      />
+    </div>
+  );
+}
+
+function FieldNameForm({
+  element,
+  setElement,
+}: {
+  element: FormElement<InputType>;
+  setElement: React.Dispatch<React.SetStateAction<FormElement<InputType>>>;
+}) {
+  function onNameChange(event: ChangeEvent<HTMLInputElement>): void {
+    event.preventDefault();
+    setElement({ ...element, name: event.target.value });
+  }
+
+  return (
+    <div className="form-group">
+      <label htmlFor="name" className="form-label">
+        Field Name
+      </label>
+      <input
+        type="text"
+        name="name"
+        required
+        className="form-control"
+        id="name"
+        placeholder="Name the field"
+        title='Enter the name of the field here. For example: "email" or "favouriteFood"'
+        value={element.name}
+        onChange={onNameChange}
+      />
+    </div>
   );
 }

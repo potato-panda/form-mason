@@ -2,10 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import './db/db.tsx';
+import './events/EventBus.tsx';
 import './flex.css';
 import './index.css';
 import router from './router/Router.tsx';
-import EventBus from './events/EventBus.tsx';
 
 const rootEl = document.getElementById('root');
 
@@ -22,5 +22,3 @@ root.render(
     </React.StrictMode>
   </>
 );
-
-EventBus;

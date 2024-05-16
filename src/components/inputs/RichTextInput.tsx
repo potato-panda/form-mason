@@ -1,8 +1,6 @@
 import { useRef } from 'react';
 
 export default function RichTextInput({
-  value,
-  setValue,
   showToolbar = false,
 }: {
   value: string;
